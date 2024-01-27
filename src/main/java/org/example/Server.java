@@ -1,52 +1,70 @@
 package org.example;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
-public class Server
+public class Server {
 
-{
+    private static Map<Integer, User> users = new HashMap<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        System.out.println("Start server");
+        int port = 8888;
 
-        System.out.println("Старт сервера");
-        BufferedReader in = null;// поток для чтения данных
-        PrintWriter out= null;// поток для отправки данных
-        ServerSocket server = null;// серверный сокет
-        Socket client = null;// сокет для обслуживания клиента
-
-// создаем серверный сокет
-        try {
-            server = new ServerSocket(1234);
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            while (true) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    sendMessToAll("Порт данного клиента: " + clientSocket.getPort());
+                    new Thread(() -> {
+                        try (PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+                            User user = new User(clientSocket, out);
+                            users.put(clientSocket.getPort(), user);
+                            System.out.println(user);
+                            waitMessAndSend(clientSocket);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                            try {
+                                clientSocket.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         } catch (IOException e) {
-            System.out.println("Ошибка связывания с портом 1234");
-            System.exit(-1);
-            System.out.print("Ждем соединения");
-            client= server.accept();
-            System.out.println("Клиент подключился");
+            throw new RuntimeException(e);
         }
+    }
 
-// создаем потоки для связи с клиентом
-        in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        out = new PrintWriter(client.getOutputStream(),true);
-        String input,output;
-
-// цикл ожидания сообщений от клиента
-        System.out.println("Ожидаем сообщений");
-        while ((input = in.readLine()) != null) {
-            if (input.equalsIgnoreCase("exit"))
-                break;
-            out.println("Сервер: "+input);
-            System.out.println(input);
+    public static synchronized void sendMessToAll(String mess) {
+        for (Map.Entry<Integer, User> entry : users.entrySet()) {
+            entry.getValue().sendMsg(mess);
+            System.out.println("Сообщение отправлено");
         }
+    }
 
-        out.close();
-        in.close();
-        client.close();
-        server.close();
-
+    public static void waitMessAndSend(Socket clientSocket) {
+        try (Scanner inMess = new Scanner(clientSocket.getInputStream())) {
+            while (true) {
+                if (inMess.hasNext()) {
+                    String mess = inMess.nextLine();
+                    switch (mess) {
+                        default:
+                            sendMessToAll(clientSocket.getPort() + ": " + mess);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
