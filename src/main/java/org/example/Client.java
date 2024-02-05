@@ -1,16 +1,11 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client {
-    static String host = "127.0.0.1";
-    static int port = 8888;
 
     private  static  final String EXITCHAT = "/exit";
     private static Socket clientSocket = null;
@@ -18,7 +13,16 @@ public class Client {
     private static PrintWriter outMess;
     private static Scanner scannerConsole;
 
+
     public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader("src/main/settings.txt"));
+        String[] line = reader.readLine().split(" = ");
+        String host = line[1];
+        line = reader.readLine().split(" = ");
+        int port = Integer.parseInt(line[1]);
+        reader.close();
+        //System.out.println("host = " + host + " " + " port = " + port);
+
         clientSocket = new Socket(host, port);
         outMess = new PrintWriter(clientSocket.getOutputStream(), true);
         inMess = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
