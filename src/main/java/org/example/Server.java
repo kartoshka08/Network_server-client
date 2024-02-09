@@ -1,6 +1,5 @@
 package org.example;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -11,9 +10,14 @@ public class Server {
 
     private static Map<Integer, User> users = new HashMap<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("Start server");
-        int port = 8888;
+        BufferedReader reader = new BufferedReader(new FileReader("src/main/settings.txt"));
+        String[] line = reader.readLine().split(" = ");
+        String host = line[1];
+        line = reader.readLine().split(" = ");
+        int port = Integer.parseInt(line[1]);
+        reader.close();
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {

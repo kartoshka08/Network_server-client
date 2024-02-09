@@ -21,7 +21,7 @@ public class Client {
         line = reader.readLine().split(" = ");
         int port = Integer.parseInt(line[1]);
         reader.close();
-        System.out.println("host = " + host + " " + " port = " + port);
+        //System.out.println("host = " + host + " " + " port = " + port);
 
         clientSocket = new Socket(host, port);
         outMess = new PrintWriter(clientSocket.getOutputStream(), true);
